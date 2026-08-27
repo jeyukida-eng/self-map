@@ -248,6 +248,23 @@
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(16px);background:var(--lumen);color:#06110B;padding:11px 20px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .22s ease,transform .22s ease;z-index:70}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+  /* 공유 카드 시트 */
+  .sheet{position:fixed;inset:0;z-index:80;display:none;background:rgba(4,7,6,.86);padding:clamp(12px,3vw,28px);overflow-y:auto}
+  .sheet.open{display:flex;align-items:flex-start;justify-content:center}
+  .sheetbox{background:var(--deep);border:1px solid var(--hair-2);width:100%;max-width:460px;margin:auto;padding:clamp(16px,4vw,24px);display:flex;flex-direction:column;gap:15px}
+  .sheethead{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .xclose{background:transparent;border:1px solid var(--hair-2);color:var(--txt-2);padding:6px 12px;font-size:13px}
+  .xclose:hover{border-color:var(--txt-3);color:var(--txt)}
+  .cardprev{background:var(--void);border:1px solid var(--hair);padding:9px;display:flex;justify-content:center;align-items:center;min-height:170px}
+  .cardprev img{display:block;width:100%;max-width:290px;height:auto}
+  .cardprev span{font-size:13px;color:var(--txt-3)}
+  .seg{display:flex;border:1px solid var(--hair-2)}
+  .seg button{flex:1;background:transparent;border:0;padding:11px 6px;font-size:13.5px;color:var(--txt-3)}
+  .seg button+button{border-left:1px solid var(--hair-2)}
+  .seg button[aria-pressed="true"]{background:rgba(124,255,178,.09);color:var(--lumen);font-weight:600}
+  .chk{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--txt-2);cursor:pointer}
+  .chk input{width:15px;height:15px;accent-color:var(--lumen)}
+
   .fade{animation:up .5s cubic-bezier(.2,.85,.25,1) both}
   @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
   @media (prefers-reduced-motion: reduce){*{animation-duration:.001ms !important;transition-duration:.001ms !important}}
@@ -352,21 +369,21 @@
   ];
 
   var TYPES = {
-    ET:{ name:"외향적 사고형", line:"바깥의 사실과 기준으로 세상을 정리한다",
+    ET:{ name:"외향적 사고형", line:"바깥의 사실과 기준으로 세상을 정리한다", way:"바깥의 사실과 기준으로 세상을 정리하는",
          desc:"목표와 규칙을 세우고 그쪽으로 일과 사람을 움직이는 데 강합니다. 대신 자기 안에서 올라오는 감정은 뒤로 밀리기 쉽고, 쌓였다가 예상 못 한 순간에 터집니다." },
-    IT:{ name:"내향적 사고형", line:"자기 안에 개념의 뼈대를 세운다",
+    IT:{ name:"내향적 사고형", line:"자기 안에 개념의 뼈대를 세운다", way:"자기 안에 개념의 뼈대를 세우는",
          desc:"남이 뭐라 하든 스스로 납득되는 논리를 만드는 데 시간을 씁니다. 깊이는 있지만, 그걸 밖으로 전달하고 사람들 사이에서 조율하는 일은 자주 뒷전이 됩니다." },
-    EF:{ name:"외향적 감정형", line:"사람들 사이의 온도를 읽고 맞춘다",
+    EF:{ name:"외향적 감정형", line:"사람들 사이의 온도를 읽고 맞춘다", way:"사람들 사이의 온도를 읽고 맞추는",
          desc:"분위기를 살리고 사람을 연결하는 힘이 있습니다. 그 과정에서 정작 자기가 뭘 원하는지는 흐려지고, 나중에 억울함으로 돌아오기도 합니다." },
-    IF:{ name:"내향적 감정형", line:"말하지 않는 자기만의 기준이 단단하다",
+    IF:{ name:"내향적 감정형", line:"말하지 않는 자기만의 기준이 단단하다", way:"말하지 않는 자기 기준을 지켜온",
          desc:"옳고 그름에 대한 감각이 깊고 쉽게 타협하지 않습니다. 다만 그 기준을 설명하지 않아서 차갑거나 고집스럽게 오해받는 일이 잦습니다." },
-    ES:{ name:"외향적 감각형", line:"지금 여기의 구체적인 현실에 밝다",
+    ES:{ name:"외향적 감각형", line:"지금 여기의 구체적인 현실에 밝다", way:"지금 여기의 현실을 몸으로 붙잡는",
          desc:"되는 것과 안 되는 것을 빨리 알아채고 몸으로 먼저 움직입니다. 대신 아직 오지 않은 가능성이나 숨은 의미는 잘 보지 않아 기회를 놓치기도 합니다." },
-    IS:{ name:"내향적 감각형", line:"겪은 것이 안에 인상으로 오래 남는다",
+    IS:{ name:"내향적 감각형", line:"겪은 것이 안에 인상으로 오래 남는다", way:"겪은 것을 안에 오래 남기는",
          desc:"익숙한 것을 정확하게 반복하고 지켜내는 데 강합니다. 그래서 안정적이지만, 방식을 바꿔야 할 때 유난히 힘이 듭니다." },
-    EN:{ name:"외향적 직관형", line:"바깥 세계에서 가능성을 계속 발견한다",
+    EN:{ name:"외향적 직관형", line:"바깥 세계에서 가능성을 계속 발견한다", way:"바깥에서 가능성을 계속 발견하는",
          desc:"새 판을 여는 데 강하고 사람과 기회를 잘 엮습니다. 다만 시작한 것을 끝까지 끌고 가는 구간에서 힘이 빠지고, 벌여놓은 것이 쌓입니다." },
-    IN:{ name:"내향적 직관형", line:"안에서 떠오르는 상을 따라간다",
+    IN:{ name:"내향적 직관형", line:"안에서 떠오르는 상을 따라간다", way:"안에서 떠오르는 상을 따라가는",
          desc:"남들이 아직 못 보는 방향을 먼저 감지합니다. 그 감을 현실의 구체적인 절차와 숫자로 옮기는 데 애를 먹고, 설명이 어렵다는 말을 자주 듣습니다." }
   };
 
@@ -694,7 +711,7 @@
     });
 
     var d1 = state.decl.v || (FN[R.dom] + euro(FN[R.dom]) + " 세상을 붙잡는 힘");
-    var d2 = state.decl.w || T.line;
+    var d2 = state.decl.w || T.way;
     var infShort = INF ? INF.short : "내가 외면해온 것";
     var d3 = state.decl.g || (infShort + josa(infShort, "을", "를") + " 되찾는 중이라는 것");
 
@@ -799,7 +816,8 @@
         '<textarea id="fb" placeholder="아닌 부분이 오히려 더 중요한 단서입니다">' + esc(state.feedback || "") + '</textarea>' +
         '<hr class="rule">' +
         '<div class="btnrow">' +
-          '<button class="btn solid" id="copy">결과 복사</button>' +
+          '<button class="btn solid" id="cardBtn">공유 카드 만들기</button>' +
+          '<button class="btn" id="copy">결과 복사</button>' +
           '<button class="btn quiet" id="back">답변 고치기</button>' +
           '<button class="btn quiet" id="reset">처음부터</button>' +
         '</div>' +
@@ -835,6 +853,13 @@
     var fb = document.getElementById("fb");
     fb.oninput = function(){ state.feedback = fb.value; save(); };
 
+    document.getElementById("cardBtn").onclick = function(){
+      openCard({R:R, T:T, INF:INF, decl:[
+        "나는 " + d1 + josa(d1, "을", "를") + " 가지고 있고,",
+        d2 + " 방식으로 살아왔으며,",
+        "이제 " + d3 + josa(d3, "을", "를") + " 배우는 중이다."
+      ]});
+    };
     document.getElementById("back").onclick = function(){ state.step = TOTAL - 1; save(); render(); };
     document.getElementById("reset").onclick = function(){
       state = {step:-1, ans:{}, pick:{}, text:{}, decl:{}, done:[], feedback:""};
@@ -888,6 +913,325 @@
     L.push("");
     L.push(SITE);
     return L.join("\n");
+  }
+
+  /* ============ 공유 카드 ============ */
+
+  var CF_UI  = '"Pretendard Variable", Pretendard, "Gothic A1", sans-serif';
+  var CF_NUM = '"Martian Mono", monospace';
+  var C = {
+    void:"#0A0D0C", deep:"#0E1311", hair:"#1D2723", hair2:"#2B3833",
+    txt:"#EAF2ED", txt2:"#93A29B", txt3:"#5A6862",
+    lumen:"#7CFFB2", lumenDeep:"#2E6B4C", ember:"#FF6B4A", emberDeep:"#7A3325"
+  };
+  var RATIOS = { feed:[1080,1350], story:[1080,1920] };
+  var cardOpt = { ratio:"feed", decl:true };
+  var cardData = null, cardBlob = null;
+
+  function fnt(wt, size, fam){ return wt + " " + size + "px " + fam; }
+
+  function fitOneLine(c, text, maxW, weight, start, min, fam){
+    var size = start;
+    while(size > min){
+      c.font = fnt(weight, size, fam);
+      if(c.measureText(text).width <= maxW) break;
+      size -= 2;
+    }
+    c.font = fnt(weight, size, fam);
+    return size;
+  }
+
+  function wrapKo(c, text, maxW){
+    var lines = [], cur = "";
+    for(var i = 0; i < text.length; i++){
+      var ch = text[i];
+      if(c.measureText(cur + ch).width > maxW && cur){
+        var sp = cur.lastIndexOf(" ");
+        if(sp > 0 && cur.length - sp < 14){ lines.push(cur.slice(0, sp)); cur = cur.slice(sp + 1) + ch; }
+        else { lines.push(cur); cur = ch; }
+      } else cur += ch;
+    }
+    if(cur) lines.push(cur);
+    return lines;
+  }
+
+  function glow(c, color, blur){ c.shadowColor = color; c.shadowBlur = blur; }
+  function noGlow(c){ c.shadowColor = "transparent"; c.shadowBlur = 0; }
+
+  function drawBackdrop(c, W, H){
+    c.fillStyle = C.void; c.fillRect(0, 0, W, H);
+    // 위쪽 빛무리
+    var g = c.createRadialGradient(W * .5, H * .12, 0, W * .5, H * .12, W * .9);
+    g.addColorStop(0, "rgba(124,255,178,.10)");
+    g.addColorStop(1, "rgba(124,255,178,0)");
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    // 등고선
+    for(var n = 0; n < 10; n++){
+      c.strokeStyle = "rgba(124,255,178," + (0.10 - n * 0.009).toFixed(3) + ")";
+      c.lineWidth = 1.4;
+      c.beginPath();
+      var r = 120 + n * 128;
+      for(var a = 0; a <= Math.PI * 2 + 0.06; a += 0.05){
+        var rr = r + Math.sin(a * 3 + n * .66) * (22 + n * 5) + Math.cos(a * 5 - n * .38) * (12 + n * 2.6);
+        var x = W * .5 + Math.cos(a) * rr * 1.25, y = H * .30 + Math.sin(a) * rr * .62;
+        if(a === 0) c.moveTo(x, y); else c.lineTo(x, y);
+      }
+      c.closePath(); c.stroke();
+    }
+    // 비네트
+    var v = c.createRadialGradient(W * .5, H * .32, H * .18, W * .5, H * .5, H * .78);
+    v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,.62)");
+    c.fillStyle = v; c.fillRect(0, 0, W, H);
+  }
+
+  function drawGrain(c, W, H){
+    var n = document.createElement("canvas");
+    n.width = n.height = 190;
+    var nc = n.getContext("2d");
+    var id = nc.createImageData(190, 190), px = id.data;
+    for(var i = 0; i < px.length; i += 4){
+      var v = 90 + Math.random() * 76;
+      px[i] = px[i+1] = px[i+2] = v;
+      px[i+3] = 255;
+    }
+    nc.putImageData(id, 0, 0);
+    c.save();
+    c.globalCompositeOperation = "overlay";
+    c.globalAlpha = .13;
+    c.fillStyle = c.createPattern(n, "repeat");
+    c.fillRect(0, 0, W, H);
+    c.restore();
+  }
+
+  function drawCard(cv){
+    var dim = RATIOS[cardOpt.ratio], W = dim[0], H = dim[1];
+    cv.width = W; cv.height = H;
+    var c = cv.getContext("2d");
+    var d = cardData, R = d.R, T = d.T, INF = d.INF;
+
+    drawBackdrop(c, W, H);
+
+    // 콘텐츠는 오프스크린에 먼저 그려 실제 높이를 잰다
+    var off = document.createElement("canvas");
+    off.width = W; off.height = 1700;
+    var oc = off.getContext("2d");
+    var blockH = drawContent(oc, W, d);
+    var top = Math.max(0, Math.round((H - blockH) / 2));
+    c.drawImage(off, 0, 0, W, blockH, 0, top, W, blockH);
+    drawGrain(c, W, H);
+  }
+
+  function drawContent(c, W, d){
+    var R = d.R, T = d.T, INF = d.INF;
+    var P = 92, IW = W - P * 2;
+    c.textBaseline = "alphabetic";
+
+    // 머리말
+    c.textAlign = "left";
+    c.font = fnt(500, 19, CF_NUM);
+    c.fillStyle = C.txt3;
+    try{ c.letterSpacing = "3px"; }catch(e){}
+    c.fillText("C.G. JUNG \u00b7 개성화 지도", P, 116);
+    try{ c.letterSpacing = "0px"; }catch(e){}
+
+    // 유형명
+    var nameSize = fitOneLine(c, T.name, IW, 900, 94, 52, CF_UI);
+    c.fillStyle = C.txt;
+    glow(c, "rgba(124,255,178,.30)", 46);
+    c.fillText(T.name, P, 180 + nameSize * .76);
+    noGlow(c);
+    var y = 180 + nameSize * .76;
+
+    // 한 줄 요약
+    c.font = fnt(400, 31, CF_UI);
+    c.fillStyle = C.txt2;
+    var sub = wrapKo(c, T.line, IW).slice(0, 2);
+    sub.forEach(function(ln, i){ c.fillText(ln, P, y + 52 + i * 43); });
+    y = y + 52 + (sub.length - 1) * 43;
+
+    // 구분선
+    y += 52;
+    c.strokeStyle = C.hair; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(P, y); c.lineTo(W - P, y); c.stroke();
+
+    // 네 기능 — 의식은 빛, 무의식은 어둠
+    y += 50;
+    c.font = fnt(500, 17, CF_NUM); c.fillStyle = C.txt3;
+    try{ c.letterSpacing = "3px"; }catch(e){}
+    c.fillText("네 기능", P, y);
+    try{ c.letterSpacing = "0px"; }catch(e){}
+    y += 54;
+
+    var rowH = 70, barX = P + 108, barW = IW - 108 - 148;
+    ["T","F","S","N"].forEach(function(k, i){
+      var ry = y + i * rowH;
+      var isDom = k === R.dom, isAux = k === R.aux, isInf = k === R.inf;
+      var col = isDom ? C.lumen : (isAux ? C.txt : (isInf ? C.ember : C.txt3));
+      var barCol = isDom ? C.lumen : (isAux ? C.lumenDeep : (isInf ? C.emberDeep : "#26302B"));
+
+      c.textAlign = "left";
+      c.font = fnt(isDom ? 700 : 500, 30, CF_UI);
+      c.fillStyle = col;
+      c.fillText(FN[k], P, ry + 10);
+
+      c.fillStyle = isInf ? "#2A1712" : "#141B18";
+      c.fillRect(barX, ry - 4, barW, 8);
+      if(isDom) glow(c, "rgba(124,255,178,.85)", 22);
+      c.fillStyle = barCol;
+      c.fillRect(barX, ry - 4, Math.max(10, barW * (R.fn[k] / 6)), 8);
+      noGlow(c);
+
+      c.textAlign = "right";
+      c.font = fnt(500, 19, CF_NUM);
+      c.fillStyle = col;
+      c.fillText(R.fn[k] + "/6", W - P, ry + 8);
+
+      if(isDom || isAux || isInf){
+        c.font = fnt(500, 15, CF_NUM);
+        c.fillStyle = isInf ? C.ember : (isDom ? C.lumen : C.txt3);
+        c.fillText(isDom ? "주기능" : (isAux ? "보조" : "열등"), W - P - 66, ry + 8);
+      }
+    });
+    y += rowH * 3 + 14;
+    c.textAlign = "left";
+
+    // 열등기능 — 개성화의 문
+    if(INF){
+      var boxTop = y + 22, boxH = 208;
+      c.fillStyle = "rgba(255,107,74,.05)";
+      c.fillRect(P, boxTop, IW, boxH);
+      c.strokeStyle = C.emberDeep; c.lineWidth = 1;
+      c.strokeRect(P + .5, boxTop + .5, IW - 1, boxH - 1);
+
+      c.font = fnt(500, 16, CF_NUM); c.fillStyle = C.ember;
+      try{ c.letterSpacing = "3px"; }catch(e){}
+      c.fillText("열등기능 · 개성화의 문", P + 30, boxTop + 44);
+      try{ c.letterSpacing = "0px"; }catch(e){}
+
+      c.font = fnt(800, 38, CF_UI); c.fillStyle = C.ember;
+      c.fillText(ATT[R.infAtt] + "적 " + FN[R.inf], P + 30, boxTop + 96);
+
+      c.font = fnt(400, 24, CF_UI); c.fillStyle = C.txt2;
+      wrapKo(c, INF.desc, IW - 60).slice(0, 2).forEach(function(ln, i){
+        c.fillText(ln, P + 30, boxTop + 140 + i * 34);
+      });
+      y = boxTop + boxH;
+    }
+
+    // 선언문
+    if(cardOpt.decl){
+      var dTop = y + 26;
+      c.font = fnt(600, 26, CF_UI);
+      var dl = [];
+      d.decl.forEach(function(ln){ dl = dl.concat(wrapKo(c, ln, IW - 60)); });
+      if(dl.length > 5){
+        c.font = fnt(600, 22, CF_UI);
+        dl = []; d.decl.forEach(function(ln){ dl = dl.concat(wrapKo(c, ln, IW - 60)); });
+      }
+      var lh = 42, dH = dl.length * lh + 52;
+      c.fillStyle = "rgba(124,255,178,.05)";
+      c.fillRect(P, dTop, IW, dH);
+      c.strokeStyle = C.lumenDeep;
+      c.strokeRect(P + .5, dTop + .5, IW - 1, dH - 1);
+      c.fillStyle = C.txt;
+      dl.forEach(function(ln, i){ c.fillText(ln, P + 30, dTop + 48 + i * lh); });
+      y = dTop + dH;
+    }
+
+    // 꼬리
+    c.font = fnt(700, 28, CF_UI); c.fillStyle = C.txt;
+    c.fillText("당신의 무의식은 어느 쪽인가요?", P, y + 84);
+    c.font = fnt(500, 19, CF_NUM); c.fillStyle = C.lumen;
+    c.fillText(SITE.replace(/^https?:\/\//, ""), P, y + 128);
+    return y + 128 + P;
+  }
+
+  function ensureFonts(){
+    if(!document.fonts || !document.fonts.load) return Promise.resolve();
+    return Promise.all([
+      document.fonts.load('900 92px ' + CF_UI),
+      document.fonts.load('800 38px ' + CF_UI),
+      document.fonts.load('600 26px ' + CF_UI),
+      document.fonts.load('400 30px ' + CF_UI),
+      document.fonts.load('500 19px ' + CF_NUM)
+    ]).catch(function(){});
+  }
+
+  function refreshCard(){
+    var prev = document.getElementById("cardprev");
+    prev.innerHTML = '<span>카드를 그리는 중…</span>';
+    ensureFonts().then(function(){
+      var cv = document.createElement("canvas");
+      drawCard(cv);
+      cv.toBlob(function(blob){
+        cardBlob = blob;
+        var img = new Image();
+        img.alt = "결과 카드 미리보기";
+        img.src = URL.createObjectURL(blob);
+        img.onload = function(){ prev.innerHTML = ""; prev.appendChild(img); };
+      }, "image/png");
+    });
+  }
+
+  function openCard(data){
+    cardData = data;
+    var sheet = document.getElementById("cardsheet");
+    if(!sheet){
+      sheet = document.createElement("div");
+      sheet.className = "sheet"; sheet.id = "cardsheet";
+      sheet.innerHTML =
+        '<div class="sheetbox">' +
+          '<div class="sheethead"><span class="tag on">공유 카드</span>' +
+            '<button class="xclose" id="cardClose">닫기</button></div>' +
+          '<div class="cardprev" id="cardprev"></div>' +
+          '<div class="seg" id="ratioSeg">' +
+            '<button data-r="feed" aria-pressed="true">피드 4:5</button>' +
+            '<button data-r="story" aria-pressed="false">스토리 9:16</button>' +
+          '</div>' +
+          '<label class="chk"><input type="checkbox" id="incDecl" checked> 개성화 선언문 포함</label>' +
+          '<div class="btnrow">' +
+            '<button class="btn solid" id="cardShare">공유하기</button>' +
+            '<button class="btn" id="cardSave">이미지 저장</button>' +
+          '</div>' +
+          '<p class="note">폰에서는 위 이미지를 <b>길게 눌러</b>도 저장됩니다. 무의식 문항에 적은 내용은 카드에 들어가지 않습니다.</p>' +
+        '</div>';
+      document.body.appendChild(sheet);
+
+      sheet.onclick = function(e){ if(e.target === sheet) sheet.classList.remove("open"); };
+      document.getElementById("cardClose").onclick = function(){ sheet.classList.remove("open"); };
+      Array.prototype.forEach.call(sheet.querySelectorAll("#ratioSeg button"), function(b){
+        b.onclick = function(){
+          cardOpt.ratio = b.dataset.r;
+          Array.prototype.forEach.call(sheet.querySelectorAll("#ratioSeg button"), function(x){
+            x.setAttribute("aria-pressed", String(x === b));
+          });
+          refreshCard();
+        };
+      });
+      document.getElementById("incDecl").onchange = function(){
+        cardOpt.decl = this.checked; refreshCard();
+      };
+      document.getElementById("cardSave").onclick = function(){
+        if(!cardBlob) return;
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(cardBlob);
+        a.download = "individuation-map.png";
+        document.body.appendChild(a); a.click(); a.remove();
+        toast("이미지를 저장했습니다");
+      };
+      document.getElementById("cardShare").onclick = function(){
+        if(!cardBlob) return;
+        var file = new File([cardBlob], "individuation-map.png", {type:"image/png"});
+        if(navigator.canShare && navigator.canShare({files:[file]})){
+          navigator.share({ files:[file], text: cardData.T.name + " · 개성화 지도\n" + SITE })
+            .catch(function(){});
+        }else{
+          toast("이 브라우저는 공유를 지원하지 않습니다. 이미지를 길게 눌러 저장하세요");
+        }
+      };
+    }
+    sheet.classList.add("open");
+    refreshCard();
   }
 
   /* ============ 배경 — 무의식의 지층 ============ */
