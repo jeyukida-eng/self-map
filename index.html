@@ -854,11 +854,8 @@
     fb.oninput = function(){ state.feedback = fb.value; save(); };
 
     document.getElementById("cardBtn").onclick = function(){
-      openCard({R:R, T:T, INF:INF, decl:[
-        "나는 " + d1 + josa(d1, "을", "를") + " 가지고 있고,",
-        d2 + " 방식으로 살아왔으며,",
-        "이제 " + d3 + josa(d3, "을", "를") + " 배우는 중이다."
-      ]});
+      openCard({R:R, T:T, INF:INF,
+        flavor: "이제 " + d3 + josa(d3, "을", "를") + " 배우는 중이다."});
     };
     document.getElementById("back").onclick = function(){ state.step = TOTAL - 1; save(); render(); };
     document.getElementById("reset").onclick = function(){
@@ -1003,147 +1000,227 @@
     c.restore();
   }
 
+  function rr(c, x, y, w, h, r){
+    c.beginPath();
+    if(c.roundRect){ c.roundRect(x, y, w, h, r); return; }
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r);
+    c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r);
+    c.arcTo(x, y, x + w, y, r);
+    c.closePath();
+  }
+
+  // 네 기능을 대극으로 배치한 카드 일러스트 — 사고↔감정, 감각↔직관
+  function drawPsycheArt(c, x, y, w, h, R){
+    c.save();
+    rr(c, x, y, w, h, 10); c.clip();
+
+    // 바탕
+    var g = c.createLinearGradient(x, y, x, y + h);
+    g.addColorStop(0, "#101917"); g.addColorStop(1, "#0A0F0D");
+    c.fillStyle = g; c.fillRect(x, y, w, h);
+
+    var cx = x + w / 2, cy = y + h / 2;
+
+    // 등고선
+    for(var n = 0; n < 7; n++){
+      c.strokeStyle = "rgba(124,255,178," + (0.13 - n * 0.016).toFixed(3) + ")";
+      c.lineWidth = 1.2;
+      c.beginPath();
+      var rad = 52 + n * 46;
+      for(var a = 0; a <= Math.PI * 2 + 0.06; a += 0.06){
+        var q = rad + Math.sin(a * 3 + n * .7) * (11 + n * 3) + Math.cos(a * 5 - n * .4) * (7 + n * 1.6);
+        var px = cx + Math.cos(a) * q * 1.35, py = cy + Math.sin(a) * q * .95;
+        if(a === 0) c.moveTo(px, py); else c.lineTo(px, py);
+      }
+      c.closePath(); c.stroke();
+    }
+
+    // 대극 축
+    var rx = w * 0.31, ry = h * 0.30;
+    var pos = {
+      T:[cx, cy - ry], F:[cx, cy + ry],
+      S:[cx + rx, cy], N:[cx - rx, cy]
+    };
+    c.strokeStyle = "rgba(124,255,178,.14)"; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(pos.T[0], pos.T[1]); c.lineTo(pos.F[0], pos.F[1]); c.stroke();
+    c.beginPath(); c.moveTo(pos.N[0], pos.N[1]); c.lineTo(pos.S[0], pos.S[1]); c.stroke();
+
+    // 중심 — 자기(Self)
+    c.strokeStyle = "rgba(124,255,178,.30)"; c.lineWidth = 1;
+    c.beginPath(); c.arc(cx, cy, 15, 0, Math.PI * 2); c.stroke();
+
+    // 네 기능 노드
+    ["T","F","S","N"].forEach(function(k){
+      var px = pos[k][0], py = pos[k][1];
+      var isDom = k === R.dom, isInf = k === R.inf, isAux = k === R.aux;
+      var size = 9 + (R.fn[k] / 6) * 17;
+      var col = isDom ? C.lumen : (isInf ? C.ember : (isAux ? "#4E9C74" : "#33413B"));
+
+      if(isDom){ glow(c, "rgba(124,255,178,.95)", 34); }
+      else if(isInf){ glow(c, "rgba(255,107,74,.45)", 16); }
+      c.fillStyle = col;
+      c.beginPath(); c.arc(px, py, size, 0, Math.PI * 2); c.fill();
+      noGlow(c);
+
+      if(isDom){
+        c.strokeStyle = "rgba(124,255,178,.35)"; c.lineWidth = 1;
+        c.beginPath(); c.arc(px, py, size + 15, 0, Math.PI * 2); c.stroke();
+      }
+
+      c.font = fnt(isDom ? 700 : 500, 22, CF_UI);
+      c.fillStyle = isDom ? C.lumen : (isInf ? C.ember : C.txt3);
+      c.textAlign = "center"; c.textBaseline = "middle";
+      var off = (k === "T") ? -size - 22 : (k === "F") ? size + 22 : 0;
+      var offx = (k === "S") ? size + 30 : (k === "N") ? -size - 30 : 0;
+      c.fillText(FN[k], px + offx, py + off);
+    });
+
+    c.textAlign = "left"; c.textBaseline = "alphabetic";
+    c.restore();
+
+    // 아트 프레임
+    c.strokeStyle = "rgba(124,255,178,.30)"; c.lineWidth = 2;
+    rr(c, x, y, w, h, 10); c.stroke();
+  }
+
   function drawCard(cv){
     var dim = RATIOS[cardOpt.ratio], W = dim[0], H = dim[1];
     cv.width = W; cv.height = H;
     var c = cv.getContext("2d");
-    var d = cardData, R = d.R, T = d.T, INF = d.INF;
-
     drawBackdrop(c, W, H);
 
-    // 콘텐츠는 오프스크린에 먼저 그려 실제 높이를 잰다
-    var off = document.createElement("canvas");
-    off.width = W; off.height = 1700;
-    var oc = off.getContext("2d");
-    var blockH = drawContent(oc, W, d);
-    var top = Math.max(0, Math.round((H - blockH) / 2));
-    c.drawImage(off, 0, 0, W, blockH, 0, top, W, blockH);
+    // 카드 본체 — 트레이딩 카드 비율 (0.715)
+    var CW = Math.round(Math.min(W - 150, (H - 150) * 0.715));
+    var CH = Math.round(CW / 0.715);
+    var x0 = Math.round((W - CW) / 2), y0 = Math.round((H - CH) / 2);
+
+    c.save();
+    c.shadowColor = "rgba(0,0,0,.75)"; c.shadowBlur = 60; c.shadowOffsetY = 22;
+    c.fillStyle = "#0B100E";
+    rr(c, x0, y0, CW, CH, 30); c.fill();
+    c.restore();
+
+    // 테두리
+    var bg = c.createLinearGradient(x0, y0, x0 + CW, y0 + CH);
+    bg.addColorStop(0, "#7CFFB2"); bg.addColorStop(.45, "#2E6B4C"); bg.addColorStop(1, "#1A3A2A");
+    c.strokeStyle = bg; c.lineWidth = 7;
+    rr(c, x0 + 3.5, y0 + 3.5, CW - 7, CH - 7, 28); c.stroke();
+    c.strokeStyle = "rgba(124,255,178,.18)"; c.lineWidth = 1;
+    rr(c, x0 + 14.5, y0 + 14.5, CW - 29, CH - 29, 20); c.stroke();
+
+    drawCardFace(c, x0, y0, CW, CH);
     drawGrain(c, W, H);
   }
 
-  function drawContent(c, W, d){
-    var R = d.R, T = d.T, INF = d.INF;
-    var P = 92, IW = W - P * 2;
-    c.textBaseline = "alphabetic";
+  function drawCardFace(c, x0, y0, CW, CH){
+    var d = cardData, R = d.R, T = d.T, INF = d.INF;
+    var P = 48, L = x0 + P, IW = CW - P * 2;
+    c.textBaseline = "alphabetic"; c.textAlign = "left";
 
-    // 머리말
-    c.textAlign = "left";
-    c.font = fnt(500, 19, CF_NUM);
-    c.fillStyle = C.txt3;
-    try{ c.letterSpacing = "3px"; }catch(e){}
-    c.fillText("C.G. JUNG \u00b7 개성화 지도", P, 116);
-    try{ c.letterSpacing = "0px"; }catch(e){}
+    // 세로 배분 — 남는 공간은 전부 일러스트가 흡수한다
+    var NAME = 96, GAP1 = 26, BAND = 44, GAP2 = 20,
+        MOVES = 182, GAP3 = 22, WEAK = 88, GAP4 = 26, FLAV = 64, CRED = 56;
+    var artH = CH - (NAME + GAP1 + GAP2 + BAND + MOVES + GAP3 + WEAK + GAP4 + FLAV + CRED);
 
-    // 유형명
-    var nameSize = fitOneLine(c, T.name, IW, 900, 94, 52, CF_UI);
+    // ── 이름 줄
+    var y = y0 + NAME;
+    fitOneLine(c, T.name, IW - 190, 900, 46, 28, CF_UI);
     c.fillStyle = C.txt;
-    glow(c, "rgba(124,255,178,.30)", 46);
-    c.fillText(T.name, P, 180 + nameSize * .76);
+    c.fillText(T.name, L, y);
+
+    c.textAlign = "right";
+    c.font = fnt(700, 42, CF_NUM);
+    var numW = c.measureText(R.fn[R.dom] + "/6").width;
+    c.fillStyle = C.lumen;
+    glow(c, "rgba(124,255,178,.55)", 24);
+    c.fillText(R.fn[R.dom] + "/6", x0 + CW - P, y);
     noGlow(c);
-    var y = 180 + nameSize * .76;
+    c.font = fnt(700, 20, CF_UI); c.fillStyle = C.txt2;
+    c.fillText(FN[R.dom], x0 + CW - P - numW - 14, y);
+    c.textAlign = "left";
 
-    // 한 줄 요약
-    c.font = fnt(400, 31, CF_UI);
-    c.fillStyle = C.txt2;
-    var sub = wrapKo(c, T.line, IW).slice(0, 2);
-    sub.forEach(function(ln, i){ c.fillText(ln, P, y + 52 + i * 43); });
-    y = y + 52 + (sub.length - 1) * 43;
+    // ── 일러스트
+    var artY = y + GAP1;
+    drawPsycheArt(c, L, artY, IW, artH, R);
+    y = artY + artH + GAP2;
 
-    // 구분선
-    y += 52;
-    c.strokeStyle = C.hair; c.lineWidth = 1;
-    c.beginPath(); c.moveTo(P, y); c.lineTo(W - P, y); c.stroke();
+    // ── 분류 띠
+    c.fillStyle = "rgba(124,255,178,.07)";
+    c.fillRect(L, y, IW, BAND);
+    c.font = fnt(500, 18, CF_UI); c.fillStyle = C.txt2;
+    c.fillText("태도 " + ATT[R.domAtt] + "   ·   보조기능 " + FN[R.aux] + "   ·   " + T.line, L + 16, y + 29);
+    y += BAND;
 
-    // 네 기능 — 의식은 빛, 무의식은 어둠
-    y += 50;
-    c.font = fnt(500, 17, CF_NUM); c.fillStyle = C.txt3;
-    try{ c.letterSpacing = "3px"; }catch(e){}
-    c.fillText("네 기능", P, y);
-    try{ c.letterSpacing = "0px"; }catch(e){}
-    y += 54;
+    // ── 기술 두 개
+    function move(yy, key, label, dmg, desc, isDom){
+      var col = isDom ? C.lumen : C.txt2;
+      c.beginPath(); c.arc(L + 21, yy - 8, 19, 0, Math.PI * 2);
+      c.fillStyle = isDom ? "rgba(124,255,178,.16)" : "rgba(147,162,155,.10)";
+      c.fill();
+      c.strokeStyle = isDom ? C.lumen : "#3C4A44"; c.lineWidth = 1.5; c.stroke();
+      c.font = fnt(700, 18, CF_UI); c.fillStyle = col;
+      c.textAlign = "center"; c.fillText(FN[key], L + 21, yy - 1); c.textAlign = "left";
 
-    var rowH = 70, barX = P + 108, barW = IW - 108 - 148;
-    ["T","F","S","N"].forEach(function(k, i){
-      var ry = y + i * rowH;
-      var isDom = k === R.dom, isAux = k === R.aux, isInf = k === R.inf;
-      var col = isDom ? C.lumen : (isAux ? C.txt : (isInf ? C.ember : C.txt3));
-      var barCol = isDom ? C.lumen : (isAux ? C.lumenDeep : (isInf ? C.emberDeep : "#26302B"));
-
-      c.textAlign = "left";
-      c.font = fnt(isDom ? 700 : 500, 30, CF_UI);
-      c.fillStyle = col;
-      c.fillText(FN[k], P, ry + 10);
-
-      c.fillStyle = isInf ? "#2A1712" : "#141B18";
-      c.fillRect(barX, ry - 4, barW, 8);
-      if(isDom) glow(c, "rgba(124,255,178,.85)", 22);
-      c.fillStyle = barCol;
-      c.fillRect(barX, ry - 4, Math.max(10, barW * (R.fn[k] / 6)), 8);
-      noGlow(c);
-
+      c.font = fnt(700, 27, CF_UI); c.fillStyle = C.txt;
+      c.fillText(label, L + 54, yy);
       c.textAlign = "right";
-      c.font = fnt(500, 19, CF_NUM);
-      c.fillStyle = col;
-      c.fillText(R.fn[k] + "/6", W - P, ry + 8);
+      c.font = fnt(700, 27, CF_NUM); c.fillStyle = col;
+      c.fillText(dmg, x0 + CW - P, yy);
+      c.textAlign = "left";
 
-      if(isDom || isAux || isInf){
-        c.font = fnt(500, 15, CF_NUM);
-        c.fillStyle = isInf ? C.ember : (isDom ? C.lumen : C.txt3);
-        c.fillText(isDom ? "주기능" : (isAux ? "보조" : "열등"), W - P - 66, ry + 8);
+      c.font = fnt(400, 19, CF_UI); c.fillStyle = C.txt3;
+      c.fillText(wrapKo(c, desc, IW - 54)[0], L + 54, yy + 30);
+    }
+
+    c.strokeStyle = "rgba(124,255,178,.12)"; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(L, y + 12); c.lineTo(L + IW, y + 12); c.stroke();
+    move(y + 58, R.dom, "주기능 · " + FN[R.dom], R.fn[R.dom] + "/6", T.line, true);
+    c.beginPath(); c.moveTo(L, y + 104); c.lineTo(L + IW, y + 104); c.stroke();
+    move(y + 150, R.aux, "보조기능 · " + FN[R.aux], R.fn[R.aux] + "/6",
+         "열등기능으로 가는 길은 여기를 거친다", false);
+    y += MOVES + GAP3;
+
+    // ── 약점 · 저항 · 태도
+    c.fillStyle = "rgba(255,107,74,.055)";
+    c.fillRect(L, y, IW, WEAK);
+    c.strokeStyle = "rgba(255,107,74,.30)"; c.lineWidth = 1;
+    c.strokeRect(L + .5, y + .5, IW - 1, WEAK - 1);
+
+    var colW = IW / 3;
+    [["약점 · 열등기능", INF ? ATT[R.infAtt] + "적 " + FN[R.inf] : "-", C.ember],
+     ["저항 · 보조기능", FN[R.aux], C.txt],
+     ["태도", ATT[R.domAtt] + "형", C.txt]].forEach(function(col, i){
+      var cxp = L + colW * i + colW / 2;
+      c.textAlign = "center";
+      c.font = fnt(500, 13, CF_NUM); c.fillStyle = C.txt3;
+      c.fillText(col[0], cxp, y + 32);
+      c.font = fnt(700, 24, CF_UI); c.fillStyle = col[2];
+      c.fillText(col[1], cxp, y + 64);
+      if(i){
+        c.strokeStyle = "rgba(255,107,74,.18)";
+        c.beginPath(); c.moveTo(L + colW * i, y + 14); c.lineTo(L + colW * i, y + WEAK - 14); c.stroke();
       }
     });
-    y += rowH * 3 + 14;
     c.textAlign = "left";
+    y += WEAK + GAP4;
 
-    // 열등기능 — 개성화의 문
-    if(INF){
-      var boxTop = y + 22, boxH = 208;
-      c.fillStyle = "rgba(255,107,74,.05)";
-      c.fillRect(P, boxTop, IW, boxH);
-      c.strokeStyle = C.emberDeep; c.lineWidth = 1;
-      c.strokeRect(P + .5, boxTop + .5, IW - 1, boxH - 1);
+    // ── 플레이버
+    var flavor = cardOpt.decl ? d.flavor : (INF ? INF.desc : T.desc);
+    c.font = "italic 400 20px " + CF_UI;
+    c.fillStyle = C.txt2;
+    wrapKo(c, flavor, IW).slice(0, 2).forEach(function(ln, i){
+      c.fillText(ln, L, y + 22 + i * 29);
+    });
 
-      c.font = fnt(500, 16, CF_NUM); c.fillStyle = C.ember;
-      try{ c.letterSpacing = "3px"; }catch(e){}
-      c.fillText("열등기능 · 개성화의 문", P + 30, boxTop + 44);
-      try{ c.letterSpacing = "0px"; }catch(e){}
-
-      c.font = fnt(800, 38, CF_UI); c.fillStyle = C.ember;
-      c.fillText(ATT[R.infAtt] + "적 " + FN[R.inf], P + 30, boxTop + 96);
-
-      c.font = fnt(400, 24, CF_UI); c.fillStyle = C.txt2;
-      wrapKo(c, INF.desc, IW - 60).slice(0, 2).forEach(function(ln, i){
-        c.fillText(ln, P + 30, boxTop + 140 + i * 34);
-      });
-      y = boxTop + boxH;
-    }
-
-    // 선언문
-    if(cardOpt.decl){
-      var dTop = y + 26;
-      c.font = fnt(600, 26, CF_UI);
-      var dl = [];
-      d.decl.forEach(function(ln){ dl = dl.concat(wrapKo(c, ln, IW - 60)); });
-      if(dl.length > 5){
-        c.font = fnt(600, 22, CF_UI);
-        dl = []; d.decl.forEach(function(ln){ dl = dl.concat(wrapKo(c, ln, IW - 60)); });
-      }
-      var lh = 42, dH = dl.length * lh + 52;
-      c.fillStyle = "rgba(124,255,178,.05)";
-      c.fillRect(P, dTop, IW, dH);
-      c.strokeStyle = C.lumenDeep;
-      c.strokeRect(P + .5, dTop + .5, IW - 1, dH - 1);
-      c.fillStyle = C.txt;
-      dl.forEach(function(ln, i){ c.fillText(ln, P + 30, dTop + 48 + i * lh); });
-      y = dTop + dH;
-    }
-
-    // 꼬리
-    c.font = fnt(700, 28, CF_UI); c.fillStyle = C.txt;
-    c.fillText("당신의 무의식은 어느 쪽인가요?", P, y + 84);
-    c.font = fnt(500, 19, CF_NUM); c.fillStyle = C.lumen;
-    c.fillText(SITE.replace(/^https?:\/\//, ""), P, y + 128);
-    return y + 128 + P;
+    // ── 하단 크레딧
+    var by = y0 + CH - 40;
+    c.font = fnt(500, 14, CF_NUM); c.fillStyle = C.txt3;
+    c.fillText("C.G. JUNG · 1921 · " + R.typeKey, L, by);
+    c.textAlign = "right"; c.fillStyle = C.lumen;
+    c.fillText(SITE.replace(/^https?:\/\//, ""), x0 + CW - P, by);
+    c.textAlign = "left";
   }
 
   function ensureFonts(){
@@ -1173,6 +1250,44 @@
     });
   }
 
+  function isIOS(){
+    return /iP(hone|ad|od)/.test(navigator.userAgent) ||
+           (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+
+  function saveCard(){
+    var name = "jung-card-" + (cardData && cardData.R ? cardData.R.typeKey : "map") + ".png";
+
+    // 1) 아티팩트 뷰어 안이면 전용 저장 통로를 쓴다
+    if(window.claude && typeof window.claude.use === "function"){
+      window.claude.use("downloads").then(function(dl){
+        if(dl && dl.save){
+          dl.save({ filename: name, data: cardBlob }).then(
+            function(){ toast("이미지를 저장했습니다"); },
+            function(e){ if(e && e.code !== "declined") webSave(name); }
+          );
+        } else webSave(name);
+      }, function(){ webSave(name); });
+      return;
+    }
+    webSave(name);
+  }
+
+  function webSave(name){
+    var url = URL.createObjectURL(cardBlob);
+    var a = document.createElement("a");
+    // 2) iOS Safari는 blob 다운로드를 무시한다 — 새 탭으로 열어 길게 누르게 한다
+    if(isIOS() || typeof a.download === "undefined"){
+      window.open(url, "_blank");
+      toast("열린 이미지를 길게 눌러 저장하세요");
+      return;
+    }
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+    toast("이미지를 저장했습니다");
+  }
+
   function openCard(data){
     cardData = data;
     var sheet = document.getElementById("cardsheet");
@@ -1188,12 +1303,12 @@
             '<button data-r="feed" aria-pressed="true">피드 4:5</button>' +
             '<button data-r="story" aria-pressed="false">스토리 9:16</button>' +
           '</div>' +
-          '<label class="chk"><input type="checkbox" id="incDecl" checked> 개성화 선언문 포함</label>' +
+          '<label class="chk"><input type="checkbox" id="incDecl" checked> 아래 문구를 내 선언문으로</label>' +
           '<div class="btnrow">' +
             '<button class="btn solid" id="cardShare">공유하기</button>' +
             '<button class="btn" id="cardSave">이미지 저장</button>' +
           '</div>' +
-          '<p class="note">폰에서는 위 이미지를 <b>길게 눌러</b>도 저장됩니다. 무의식 문항에 적은 내용은 카드에 들어가지 않습니다.</p>' +
+          '<p class="note">저장이 안 되면 위 이미지를 <b>길게 누르거나</b>(폰) <b>우클릭</b>해서(PC) 저장하세요. 무의식 문항에 적은 내용은 카드에 들어가지 않습니다.</p>' +
         '</div>';
       document.body.appendChild(sheet);
 
@@ -1213,11 +1328,7 @@
       };
       document.getElementById("cardSave").onclick = function(){
         if(!cardBlob) return;
-        var a = document.createElement("a");
-        a.href = URL.createObjectURL(cardBlob);
-        a.download = "individuation-map.png";
-        document.body.appendChild(a); a.click(); a.remove();
-        toast("이미지를 저장했습니다");
+        saveCard();
       };
       document.getElementById("cardShare").onclick = function(){
         if(!cardBlob) return;
